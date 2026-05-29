@@ -1,0 +1,4 @@
+name|type|data|command|depend|seed|path|time|size|bytes|format|repository|iteration|parent|children|seconds|warnings|error
+inat_training_download_key|stem|a12e390ccf05f336|ec951a20809736c6|2c530c1562a7fbd1|695669420||t20602.2051769885s|s423b|423|qs|local|vector|||5.109|package ‘rgbif’ was built under R version 4.4.3|
+inat_training_download|stem|09de4dc5e6b00cdd|793b9a5420ca395b|3e4fee3bc4b96583|296882349|data//0022747-260519110011954.zip|t20602.2062607223s|s4705973b|4705973|file|local|vector|||93.606||
+inat_training_data|stem|2b9c45713f40aa9c|22e33c8a96214368|f63121a83d72f02a|-419833792||t20602.2062663302s|s2024093b|2024093|qs|local|vector|||0.372||
