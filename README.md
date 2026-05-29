@@ -1,0 +1,5 @@
+
+# wild_apples
+
+A project to make use of publicly available apple tree phenology data on
+[iNaturalist](https://www.inaturalist.org/home).
