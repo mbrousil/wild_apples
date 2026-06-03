@@ -58,7 +58,7 @@ list(
     }
   ),
   
-  # Open DWCA format and cache as qs file in pipeline
+  # Open DWCA format and cache occurrence data as qs file in pipeline
   tar_target(
     name = inat_training_data,
     packages = c("rgbif", "finch"),
@@ -71,5 +71,43 @@ list(
       inat_data$data$occurrence.txt
     },
     format = "qs"
+  ),
+  
+  # Open DWCA format and cache photo data as qs file in pipeline
+  tar_target(
+    name = inat_photo_metadata,
+    packages = c("rgbif", "finch"),
+    command = {
+      inat_data <- dwca_read(
+        input = inat_training_download,
+        read = TRUE
+      )
+      # Returns
+      inat_data$data$multimedia.txt
+    },
+    format = "qs"
+  ),
+  
+  # Grab 100 records that have photos in order to test out local visual LM
+  # ability to ID fruit and flowers
+  tar_target(
+    name = inat_photo_matchups,
+    command = {
+      # iNat samples grouped by reproductive condition
+      set.seed(78)
+      inat_subsample <- inat_training_data %>%
+        group_by(reproductiveCondition) %>%
+        slice_sample(n = 15, .data = .)
+      
+      # Match to photo metadata
+      photo_metadata_join <- inner_join(
+        x = inat_subsample,
+        y = inat_photo_metadata,
+        by = c("gbifID")
+      )
+      
+      # Return
+      photo_metadata_join
+    }
   )
 )
