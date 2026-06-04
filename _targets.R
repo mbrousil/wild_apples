@@ -88,8 +88,8 @@ list(
     format = "qs"
   ),
   
-  # Grab 100 records that have photos in order to test out local visual LM
-  # ability to ID fruit and flowers
+  # Grab ~175 records (15 per reproductiveCondition) that have photos in order
+  # to test out local visual LM ability to ID fruit and flowers
   tar_target(
     name = inat_photo_matchups,
     command = {
@@ -109,5 +109,30 @@ list(
       # Return
       photo_metadata_join
     }
+  ),
+  
+  # URLs only
+  tar_target(
+    name = inat_photo_urls,
+    command = inat_photo_matchups$identifier
+  ),
+  
+  # Download the photos from the subset
+  tar_target(
+    name = inat_photo_cache,
+    command = download_single_photo(inat_photo_urls),
+    pattern = map(inat_photo_urls),
+    format = "file"
+  ),
+  
+  # Have local VLM check each image for flowers, fruit and report back in a 
+  # structured format
+  tar_target(
+    name = vlm_photo_reviews,
+    packages = c("ellmer"),
+    command = run_vlm_analysis(inat_photo_cache),
+    pattern = map(inat_photo_cache),
+    error = "continue"
   )
+  
 )
