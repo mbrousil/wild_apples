@@ -49,20 +49,25 @@ run_vlm_analysis <- function(photo_path, vlm = "llama3.2-vision") {
   pheno_chat <- chat_ollama(
     model = vlm,
     api_args = list(temperature = 0),
-    system_prompt = "You are a data extraction assistant. Please analyze the image and extract the structured data accurately."
-  )
+    system_prompt = "You are an expert botanical assistant. Analyze the plant material in the image carefully and extract structured data.")
   
   # Define structure of the returned info
   pheno_check <- type_object(
-    has_fruit = type_boolean(description = "True if the image contains a tree with fruit. False otherwise."),
-    has_flower = type_boolean(description = "True if the image contains a tree with flowers. False otherwise."),
-    explanation = type_string(description = "A brief explanation of the visual evidence. No longer than one sentence.")
+    explanation = type_string(
+      description = "First, scan the image closely. Describe the plant material, explicitly noting if you see open flowers, closed flower buds, mature fruit, or developing/unripe fruit. Keep it under two sentences."
+    ),
+    has_fruit = type_boolean(
+      description = "True if the explanation mentions any fruit (mature or developing). False otherwise."
+    ),
+    has_flower = type_boolean(
+      description = "True if the explanation mentions open flowers OR closed flower buds. False otherwise."
+    )
   )
   
   # Call model and return structured results
   pheno_result <- tryCatch({
     result <- pheno_chat$chat_structured(
-      "Please analyze this image. Does it contain a tree with fruit or flowers on it?",
+      "Extract the botanical data from this image according to the schema.",
       content_image_file(photo_path),
       type = pheno_check
     ) 
