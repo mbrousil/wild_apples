@@ -56,13 +56,13 @@ run_vlm_analysis <- function(photo_path, vlm = "qwen2.5vl:7b") {
   # Define structure of the returned info
   pheno_check <- type_object(
     explanation = type_string(
-      description = "First, scan the image closely. Describe the plant material. Note if you see open flowers, closed flower buds, green leaf buds, or fruit. WARNING: Apple flower buds are often dark pink or red before opening; do not confuse these red flower buds with berries or fruit."
+      description = "Scan the image closely. 1. Identify any branches, leaves, flowers, or fruit that belong to an apple tree (or similar woody plant). Ignore unrelated background vegetation, grass, or ground-level wildflowers. 2. Look carefully for fruit. Note that unripe green apples can be heavily camouflaged against leaves, while mature apples may be red or yellow. 3. Look for open flowers or closed flower buds on the tree branches. WARNING: Apple flower buds are often dark pink or red before opening; do not confuse these with fruit or berries. Describe exactly what you see on the relevant tree or trees."
     ),
     has_fruit = type_boolean(
-      description = "TRUE only if actual mature or developing fruit (like apples) are clearly visible. FALSE if the red/pink objects are just closed flower buds. FALSE if there is no fruit."
+      description = "TRUE only if actual mature or developing fruit (of any color) are clearly visible on the tree. FALSE if the red/pink objects are just closed flower buds. MUST strictly match your explanation."
     ),
     has_flower = type_boolean(
-      description = "TRUE if there are open flowers OR closed flower buds. FALSE if the buds are strictly green leaf buds. FALSE if there are no flowers/buds."
+      description = "TRUE if there are open flowers OR closed flower buds on the tree. FALSE if the buds are strictly green leaf buds. FALSE if your explanation does not mention flowers or buds. MUST strictly match your explanation."
     )
   )
   
