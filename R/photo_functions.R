@@ -43,24 +43,26 @@ download_single_photo <- function(url){
 #' @return A data frame with columns has_fruit, has_flower, explanation, and
 #' photo_path.
 #' @export
-run_vlm_analysis <- function(photo_path, vlm = "llama3.2-vision") {
+run_vlm_analysis <- function(photo_path, vlm = "qwen2.5vl:7b") {
   
   # Initialize chat with instructions
   pheno_chat <- chat_ollama(
     model = vlm,
-    api_args = list(temperature = 0),
+    params = list(temperature = 0,
+                  max_tokens = 512,
+                  num_ctx = 4096),
     system_prompt = "You are an expert botanical assistant. Analyze the plant material in the image carefully and extract structured data.")
   
   # Define structure of the returned info
   pheno_check <- type_object(
     explanation = type_string(
-      description = "First, scan the image closely. Describe the plant material, explicitly noting if you see open flowers, closed flower buds, mature fruit, or developing/unripe fruit. Keep it under two sentences."
+      description = "First, scan the image closely. Describe the plant material. Note if you see open flowers, closed flower buds, green leaf buds, or fruit. WARNING: Apple flower buds are often dark pink or red before opening; do not confuse these red flower buds with berries or fruit."
     ),
     has_fruit = type_boolean(
-      description = "True if the explanation mentions any fruit (mature or developing). False otherwise."
+      description = "TRUE only if actual mature or developing fruit (like apples) are clearly visible. FALSE if the red/pink objects are just closed flower buds. FALSE if there is no fruit."
     ),
     has_flower = type_boolean(
-      description = "True if the explanation mentions open flowers OR closed flower buds. False otherwise."
+      description = "TRUE if there are open flowers OR closed flower buds. FALSE if the buds are strictly green leaf buds. FALSE if there are no flowers/buds."
     )
   )
   
@@ -94,5 +96,9 @@ run_vlm_analysis <- function(photo_path, vlm = "llama3.2-vision") {
   # Tag with photo_path for back joining
   pheno_result$photo_path <- photo_path
   
+  # Garbage collection pause for VLM
+  Sys.sleep(3)
+  
+  # Return
   pheno_result
 }

@@ -58,7 +58,7 @@ list(
     }
   ),
   
-  # Open DWCA format and cache occurrence data as qs file in pipeline
+  # Open DWCA format and cache occurrence data as a qs file in pipeline
   tar_target(
     name = inat_training_data,
     packages = c("rgbif", "finch"),
@@ -73,17 +73,25 @@ list(
     format = "qs"
   ),
   
-  # Open DWCA format and cache photo data as qs file in pipeline
+  # Open DWCA format and cache photo data as a qs file in pipeline
   tar_target(
     name = inat_photo_metadata,
-    packages = c("rgbif", "finch"),
+    packages = c("rgbif", "finch", "dplyr"),
     command = {
+      # Image licenses to use
+      safe_licenses <- c(
+        "http://creativecommons.org/publicdomain/zero/1.0/",
+        "http://creativecommons.org/licenses/by/4.0/",
+        "http://creativecommons.org/licenses/by-nc/4.0/"
+      )
+      # Read
       inat_data <- dwca_read(
         input = inat_training_download,
         read = TRUE
       )
       # Returns
-      inat_data$data$multimedia.txt
+      inat_data$data$multimedia.txt %>%
+        filter(license %in% safe_licenses)
     },
     format = "qs"
   ),
@@ -93,9 +101,12 @@ list(
   tar_target(
     name = inat_photo_matchups,
     command = {
+      
       # iNat samples grouped by reproductive condition
       set.seed(78)
       inat_subsample <- inat_training_data %>%
+        # US only
+        filter(publishingCountry == "US") %>%
         group_by(reproductiveCondition) %>%
         slice_sample(n = 15, .data = .)
       
@@ -134,5 +145,4 @@ list(
     pattern = map(inat_photo_cache),
     error = "continue"
   )
-  
 )
