@@ -1,3 +1,6 @@
+
+# Photo functions ---------------------------------------------------------
+
 #' Download a single photo from an iNaturalist url
 #'
 #' Grabs a photo from the iNaturalist url and saves it locally. Intended for
@@ -49,8 +52,12 @@ run_vlm_analysis <- function(photo_path, vlm = "qwen2.5vl:7b") {
   pheno_chat <- chat_ollama(
     model = vlm,
     params = list(temperature = 0,
-                  max_tokens = 512,
-                  num_ctx = 4096),
+                  max_tokens = 512),
+    api_args = list(
+      options = list(
+        num_ctx = 8192 
+      )
+    ),
     system_prompt = "You are an expert botanical assistant. Analyze the plant material in the image carefully and extract structured data.")
   
   # Define structure of the returned info
@@ -101,4 +108,81 @@ run_vlm_analysis <- function(photo_path, vlm = "qwen2.5vl:7b") {
   
   # Return
   pheno_result
+}
+
+
+# Weather data functions --------------------------------------------------
+
+download_prism <- function(weather_variables, min_date, max_date){
+  
+  # normalizePath ensures targets doesn't get lost in relative directories
+  dl_dir <- normalizePath("data/prism_temporary", mustWork = FALSE)
+  prism_set_dl_dir(dl_dir)
+  
+  # Prep path list
+  all_paths <- list()
+  
+  cli::cli_h2("Downloading PRISM dailys")
+  
+  # Loop through the variables and report on progress
+  for (var in weather_variables) {
+    
+    cli::cli_alert_info("Downloading variable: {.var {var}}")
+    
+    get_prism_dailys(
+      type = var,
+      minDate = min_date,
+      maxDate = max_date,
+      keepZip = FALSE
+    )
+    
+    downloaded_prism <- prism_archive_subset(
+      type = var, 
+      temp_period = "daily",
+      minDate = min_date,
+      maxDate = max_date,
+      resolution = "4km"
+    )
+    
+    # Extract the paths
+    files <- pd_to_file(downloaded_prism)
+    
+    cli::cli_alert_success("Found {.val {length(files)}} files for {.var {var}}")
+    
+    all_paths[[var]] <- files
+  }
+  
+  # Flatten the list
+  final_paths <- unlist(all_paths, use.names = FALSE)
+  
+  final_paths
+}
+
+crop_prism <- function(file_path, out_dir = "data/prism_pnw/", crop_area){
+  
+  # Name conversion for tif outputs
+  orig_name <- basename(file_path)
+  new_name <- gsub(pattern = "\\.bil$", replacement = "_pnw.tif", orig_name)
+  out_path <- file.path(out_dir, new_name)
+  
+  # Pull in raster
+  raw_raster <- rast(file_path)
+  # Transform CRS of crop_area
+  crop_area_proj <- sf::st_transform(crop_area, crs = terra::crs(raw_raster))
+  # Now crop raster
+  cropped_raster <- raw_raster %>%
+    # Crop to same bbox
+    terra::crop(terra::vect(crop_area_proj)) %>%
+    # Mask so cells not in shape but still in bbox are NA
+    terra::mask(terra::vect(crop_area_proj))
+  
+  # Export
+  terra::writeRaster(
+    x = cropped_raster, 
+    filename = out_path, 
+    overwrite = TRUE,
+    datatype = "FLT4S"
+  )
+  
+  out_path
 }
