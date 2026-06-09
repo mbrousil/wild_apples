@@ -113,10 +113,21 @@ run_vlm_analysis <- function(photo_path, vlm = "qwen2.5vl:7b") {
 
 # Weather data functions --------------------------------------------------
 
+format_date_vector <- function(start_date, end_date){
+  date_sequence <- seq.Date(
+    from = as_date(start_date),
+    to = as_date(end_date),
+    by = 1
+  )
+  
+  # Remove hyphens because dates will be used to identify filenames
+  format(date_sequence, "%Y%m%d")
+}
+
 download_prism <- function(weather_variables, min_date, max_date){
   
   # normalizePath ensures targets doesn't get lost in relative directories
-  dl_dir <- normalizePath("data/prism_temporary", mustWork = FALSE)
+  dl_dir <- normalizePath("data/prism_temp", mustWork = FALSE)
   prism_set_dl_dir(dl_dir)
   
   # Prep path list
@@ -185,4 +196,101 @@ crop_prism <- function(file_path, out_dir = "data/prism_pnw/", crop_area){
   )
   
   out_path
+}
+
+# Calculate chill hours from rasters
+calc_chill_hours <- function(chill_date, cropped_files, chill_thresh_c = 7.2){
+  # Filepath to chill hour raster output
+  out_dir <- "data/prism_chill"
+  
+  # Identify files for target date's temperature inputs
+  tmax_file_string <- sprintf("tmax.*%s.*\\.tif$", chill_date)
+  tmax_file <- grep(tmax_file_string, cropped_files, value = TRUE)
+  
+  tmin_file_string <- sprintf("tmin.*%s.*\\.tif$", chill_date)
+  tmin_file <- grep(tmin_file_string, cropped_files, value = TRUE)
+  
+  cli_alert_info("Calculating chill hours for: {.val {chill_date}}")
+  
+  out_path <- file.path(out_dir, paste0("chill_hours_", chill_date, ".tif"))
+  
+  if (file.exists(out_path)) return(out_path)
+  
+  # Load temperature rasters
+  tmax <- rast(tmax_file)
+  tmin <- rast(tmin_file)
+  
+  # Vertical center of the sine wave for daily temperature variation
+  M <- (tmax + tmin) / 2
+  # Sine distance from the midpoint to the absolute maximum
+  W <- (tmax - tmin) / 2
+  
+  # Percent of 24hrs that falls below threshold
+  chill_fraction <- 0.5 + (asin((chill_thresh_c - M) / W) / pi)
+  # Convert to hours
+  hours_interpolated <- 24 * chill_fraction
+  
+  chill_hours <- terra::ifel(
+    # Stayed cold all day
+    tmax <= chill_thresh_c, 24,                  
+    terra::ifel(
+      # Stayed warm all day
+      tmin >= chill_thresh_c, 0,                 
+      # Crossed the threshold
+      hours_interpolated                       
+    )
+  )
+  # Export chill hour raster
+  terra::writeRaster(chill_hours, filename = out_path, overwrite = TRUE, datatype = "FLT4S")
+  out_path
+}
+
+# Calculate degree days from rasters
+calc_gdds <- function(gdd_date, out_dir = "data/prism_gdd/", cropped_rasters,
+                      base_temp_c = 6.1, max_temp_c = 30){
+  
+  # Filepath to degree day raster output
+  out_path <- file.path(out_dir, paste0("pnw_gdd_", gdd_date, ".tif"))
+  
+  # Identify files for target date's temperature inputs
+  tmax_file_string <- sprintf("tmax.*%s.*\\.tif$", target_date)
+  tmax_file <- grep(tmax_file_string, cropped_files, value = TRUE)
+  
+  tmin_file_string <- sprintf("tmin.*%s.*\\.tif$", target_date)
+  tmin_file <- grep(tmin_file_string, cropped_files, value = TRUE)
+  
+  # Confirm files are real
+  if (!file.exists(tmax_file) || !file.exists(tmin_file)) {
+    cli_abort("Missing tmin or tmax file for date {.val {target_date}}")
+  }
+  
+  cli_alert_info("Calculating GDD for: {.val {target_date}}")
+  
+  # Load temperature rasters and limit to max temperature
+  tmax <- clamp(rast(tmax_file), upper = max_cap)
+  tmin <- rast(tmin_file)
+  
+  M <- (tmax + tmin) / 2
+  W <- (tmax - tmin) / 2
+  
+  gdd_simple <- M - base_temp
+  
+  # Sine wave for partial days
+  alpha <- asin((base_temp - M) / W)
+  gdd_sine <- (W * cos(alpha) - (base_temp - M) * ((pi/2) - alpha)) / pi
+  
+  gdd_final <- terra::ifel(
+    # Never got warm enough
+    tmax <= base_temp, 0,                   
+    terra::ifel(
+      # Stayed warm all day
+      tmin >= base_temp, gdd_simple,        
+      # Crossed the threshold
+      gdd_sine                              
+    )
+  )
+  
+  writeRaster(gdd_final, filename = out_path, overwrite = TRUE, datatype = "FLT4S")
+  out_path
+  
 }

@@ -1,4 +1,4 @@
-l3_inaturalist_targets <- list(
+l5_inaturalist_targets <- list(
   # Returns a download key that the next target will use as a timer for knowing
   # when the requested data have finished being prepared.
   # This is an iNaturalist dataset that is updated weekly on GBIF:
