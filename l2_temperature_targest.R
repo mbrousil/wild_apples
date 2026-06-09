@@ -1,13 +1,13 @@
 l2_temperature_targets <- list(
   
-  # Download PRISM temperatures
+  # Download PRISM temperatures for chill and gdd periods
   tar_files(
     name = prism_downloads,
-    packages = c("prism", "cli"),
+    packages = c("prism", "cli", "lubridate"),
     command = download_prism(
       weather_variables = c("tmin", "tmax", "tmean"),
-      min_date = "2022-01-01",
-      max_date = "2022-12-31"
+      min_date = min(as_date(chill_dates)),
+      max_date = max(as_date(gdd_dates))
     )
   ),
   

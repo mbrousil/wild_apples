@@ -5,8 +5,8 @@ l4_growing_dd_targets <- list(
     name = degree_day_calculations,
     packages = c("lubridate", "cli", "terra"),
     command = calc_gdds(
-      target_date = gdd_dates,
-      cropped_files = prism_cropped
+      gdd_date = gdd_dates,
+      cropped_rasters = prism_cropped
     ),
     pattern = map(gdd_dates),
     format = "file"

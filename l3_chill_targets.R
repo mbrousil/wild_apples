@@ -5,7 +5,7 @@ l3_chill_targets <- list(
     packages = c("lubridate", "cli", "terra"),
     command = calc_chill_hours(
       chill_date = chill_dates,
-      cropped_files = prism_cropped
+      cropped_rasters = prism_cropped
     ),
     pattern = map(chill_dates),
     format = "file"

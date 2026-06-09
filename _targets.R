@@ -35,8 +35,8 @@ l1_high_level_targets <- list(
   tar_target(
     name = chill_dates,
     command = format_date_vector(
-      start_date = "2025-11-01",
-      end_date = "2026-03-01")
+      start_date = "2021-11-01",
+      end_date = "2022-03-01")
   ),
   
   # Vector of dates to use for calculating degree days
