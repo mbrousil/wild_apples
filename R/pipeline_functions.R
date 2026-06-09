@@ -200,6 +200,7 @@ crop_prism <- function(file_path, out_dir = "data/prism_pnw/", crop_area){
 
 # Calculate chill hours from rasters
 calc_chill_hours <- function(chill_date, cropped_rasters, chill_thresh_c = 7.2){
+  
   # Filepath to chill hour raster output
   out_dir <- "data/prism_chill"
   
@@ -251,8 +252,11 @@ calc_chill_hours <- function(chill_date, cropped_rasters, chill_thresh_c = 7.2){
 }
 
 # Calculate degree days from rasters
-calc_gdds <- function(gdd_date, out_dir = "data/prism_gdd/", cropped_rasters,
+calc_gdds <- function(gdd_date, cropped_rasters,
                       base_temp_c = 6.1, max_temp_c = 30){
+  
+  # Filepath to GDD raster output
+  out_dir = "data/prism_gdd/"
   
   # Filepath to degree day raster output
   out_path <- file.path(out_dir, paste0("pnw_gdd_", gdd_date, ".tif"))
@@ -298,4 +302,30 @@ calc_gdds <- function(gdd_date, out_dir = "data/prism_gdd/", cropped_rasters,
   writeRaster(gdd_final, filename = out_path, overwrite = TRUE, datatype = "FLT4S")
   out_path
   
+}
+
+# Function to sum either GDD or chill hour rasters
+accumulate_rasters <- function(file_paths, out_name){
+  # Filepath to summarized output
+  out_dir <- "data/raster_summaries"
+  
+  out_path <- file.path(out_dir, paste0(out_name, ".tif"))
+  
+  cli::cli_alert_info("Collapsing {length(file_paths)} daily layers into cumulative map...")
+  
+  # Create SpatRaster stack
+  raster_stack <- rast(file_paths)
+  
+  # Create cumulative sum
+  cumulative_sum <- sum(raster_stack, na.rm = TRUE)
+  
+  # Write output
+  writeRaster(
+    cumulative_sum,
+    filename = out_path,
+    overwrite = TRUE,
+    datatype = "FLT4S"
+  )
+  # Return path to pipeline
+  out_path
 }

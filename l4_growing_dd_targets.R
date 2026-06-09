@@ -10,5 +10,16 @@ l4_growing_dd_targets <- list(
     ),
     pattern = map(gdd_dates),
     format = "file"
+  ),
+  
+  # Accumulate seasonal chill into single raster
+  tar_file(
+    name = cumulative_gdd,
+    packages = c("cli", "terra"),
+    command = accumulate_rasters(
+      file_paths = degree_day_calculations,
+      out_name = "cumulative_gdd"
+    )
   )
+  
 )

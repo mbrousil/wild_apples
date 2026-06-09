@@ -16,6 +16,7 @@ dir.create("data/prism_temp", recursive = TRUE, showWarnings = FALSE)
 dir.create("data/prism_pnw", recursive = TRUE, showWarnings = FALSE)
 dir.create("data/prism_chill", recursive = TRUE, showWarnings = FALSE)
 dir.create("data/prism_gdd", recursive = TRUE, showWarnings = FALSE)
+dir.create("data/raster_summaries", recursive = TRUE, showWarnings = FALSE)
 
 # Run the R scripts in the R/ folder
 tar_source(
